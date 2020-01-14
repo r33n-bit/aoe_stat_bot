@@ -46,7 +46,7 @@ broadcast_channel = records[0]
 ##############
 
 class User:
-    def __init__(self, name, rating_solo, rating_team, last_update, rank_solo, rank_team, profile_id):
+    def __init__(self, name, rating_solo, rating_team, last_update, rank_solo, rank_team, profile_id, rating_solo_announced, rating_team_announced):
         self.name = name
         self.rating_solo = rating_solo
         self.rating_team = rating_team
@@ -54,6 +54,8 @@ class User:
         self.rank_solo = rank_solo
         self.rank_team = rank_team
         self.profile_id = profile_id
+        self.rating_solo_announced = rating_solo_announced
+        self.rating_team_announced = rating_team_announced
 
 
 ###################
@@ -114,7 +116,7 @@ cursor.execute(sqlquery)
 records = cursor.fetchall()
 
 for player in records:
-    user_object = User(player[1], player[2], player[3], player[4], player[6], player[7], player[8])
+    user_object = User(player[1], player[2], player[3], player[4], player[6], player[7], player[8], player[9], player[10])
     user_list.append(user_object)
 
 
@@ -134,8 +136,9 @@ while True:
                     user.rating_solo = entry["rating"]
                     sqlquery = "UPDATE users SET rating_solo = '{}' WHERE name = '{}'".format(user.rating_solo, user.name)
                     cursor.execute(sqlquery)
-                    broadcast = True
                     print("Set {} solo rating to {} - Update time: {}".format(user.name, user.rating_solo, user.last_update))
+                if abs(user.rating_solo-user.rating_solo_announced) > 50:
+                    broadcast = True
 
                 user.last_update = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 sqlquery = "UPDATE users SET last_update = '{}' WHERE name = '{}'".format(user.last_update, user.name)
@@ -160,8 +163,9 @@ while True:
                     user.rating_team = entry["rating"]
                     sqlquery = "UPDATE users SET rating_team = '{}' WHERE name = '{}'".format(user.rating_team, user.name)
                     cursor.execute(sqlquery)
-                    broadcast = True
                     print("Set {} team rating to {} - Update time: {}".format(user.name, user.rating_team, user.last_update))
+                if abs(user.rating_team-user.rating_team_announced) > 50:
+                    broadcast = True
 
                 user.last_update = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 sqlquery = "UPDATE users SET last_update = '{}' WHERE name = '{}'".format(user.last_update, user.name)
@@ -188,7 +192,14 @@ while True:
         leaderboard_solo = "1v1 Leaderboard:\n----------------------\n"
         for user in user_list_sorted:
             if user.rating_solo:
-                leaderboard_solo = leaderboard_solo + "Rank: {} Rating: {} {}\n".format(user.rank_solo, user.rating_solo, user.name)
+                if user.rating_solo > user.rating_solo_announced:
+                    rating_diff = str(user.rating_solo - user.rating_solo_announced)
+                    leaderboard_solo = leaderboard_solo + "Rank: {} Rating: {} \U00002b06 {}  {}\n".format(user.rank_solo, user.rating_solo, rating_diff, user.name)
+                elif user.rating_solo < user.rating_solo_announced:
+                    rating_diff = str(user.rating_solo_announced - user.rating_solo)
+                    leaderboard_solo = leaderboard_solo + "Rank: {} Rating: {} \U00002b07 {} {}\n".format(user.rank_solo, user.rating_solo, rating_diff, user.name)
+                else:
+                    leaderboard_solo = leaderboard_solo + "Rank: {} Rating: {} {}\n".format(user.rank_solo, user.rating_solo, user.name)
 
         # Team
         user_list_with_rating = []
@@ -200,11 +211,29 @@ while True:
         leaderboard_team = "Team Leaderboard:\n------------------------\n"
         for user in user_list_sorted:
             if user.rating_team:
-                leaderboard_team = leaderboard_team + "Rank: {} Rating: {} {}\n".format(user.rank_team, user.rating_team, user.name)
+                if user.rating_team > user.rating_team_announced:
+                    rating_diff = str(user.rating_team - user.rating_team_announced)
+                    leaderboard_team = leaderboard_team + "Rank: {} Rating: {} \U00002b06 {} {}\n".format(user.rank_team, user.rating_team, rating_diff, user.name)
+                elif user.rating_team < user.rating_team_announced:
+                    rating_diff = str(user.rating_team_announced - user.rating_team)
+                    leaderboard_team = leaderboard_team + "Rank: {} Rating: {} \U00002b07 {} {}\n".format(user.rank_team, user.rating_team, rating_diff, user.name)
+                else:
+                    leaderboard_team = leaderboard_team + "Rank: {} Rating: {} {}\n".format(user.rank_team, user.rating_team, user.name)
 
         one_msg = leaderboard_solo + "\n" + leaderboard_team
         send_message(broadcast_channel, one_msg)
         print("Braodcasted the leaderboard!")
 
-    sleep(600)
+        for user in user_list:
+            if user.rating_solo:
+                user.rating_solo_announced = user.rating_solo
+                sqlquery = "UPDATE users SET rating_solo_announced = '{}' WHERE name = '{}'".format(user.rating_solo_announced, user.name)
+                cursor.execute(sqlquery)
+            if user.rating_team:
+                user.rating_team_announced = user.rating_team
+                sqlquery = "UPDATE users SET rating_team_announced = '{}' WHERE name = '{}'".format(user.rating_team_announced, user.name)
+                cursor.execute(sqlquery)
 
+            db.commit()
+
+    sleep(600)
