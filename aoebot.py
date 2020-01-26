@@ -175,7 +175,7 @@ while True:
                 sqlquery = "UPDATE users SET steam_id = '{}' WHERE name = '{}'".format(user.steam_id, user.name)
                 cursor.execute(sqlquery)
 
-                user.rank_solo = entry["rank"]
+                user.rank_team = entry["rank"]
                 sqlquery = "UPDATE users SET rank_team = '{}' WHERE name = '{}'".format(user.rank_team, user.name)
                 cursor.execute(sqlquery)
 
