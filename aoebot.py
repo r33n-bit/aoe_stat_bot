@@ -150,7 +150,7 @@ while True:
     for user in user_list:
         # Check if user has an unfinished game
         game = get_last_match(user.profile_id)
-        if not game["last_match"]["finished"] and user.last_lobby != game["last_match"]["lobby_id"]:
+        if game and not game["last_match"]["finished"] and user.last_lobby != game["last_match"]["lobby_id"]:
             print("Unfinished game found for", user.name)
             user.last_lobby = game["last_match"]["lobby_id"]
             simple_match = get_match_simple(user.profile_id)
@@ -167,7 +167,7 @@ while True:
                 print("Game VS AI")
 
         # If game is done, check the leaderboard
-        elif game["last_match"]["finished"]:
+        elif game and game["last_match"]["finished"]:
             if last_game_end_time < game["last_match"]["finished"]:
                 print("Last game is done for", user.name)
                 last_game_end_time = game["last_match"]["finished"]
