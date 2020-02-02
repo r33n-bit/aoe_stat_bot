@@ -12,6 +12,7 @@ check_leaderboard = False
 matches = []
 game_running = False
 last_game_end_time = time()
+announce_solo_games = False
 
 ###########
 # Configs #
@@ -161,7 +162,12 @@ while True:
                 if split[1] not in str(matches):
                     message = "New Match: " + str(simple_match)
                     print(message)
-                    send_message(broadcast_channel, message)
+                    if game["last_match"]["num_players"] == 2:
+                        if announce_solo_games:
+                            send_message(broadcast_channel, message)
+                    else:
+                        send_message(broadcast_channel, message)
+
                     matches.append(simple_match)
             else:
                 print("Game VS AI")
