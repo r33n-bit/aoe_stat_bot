@@ -13,6 +13,7 @@ matches = []
 game_running = False
 last_game_end_time = time()
 announce_solo_games = False
+check_leaderboard_timestamp = 0
 
 ###########
 # Configs #
@@ -178,11 +179,13 @@ while True:
                 print("Last game is done for", user.name)
                 last_game_end_time = game["last_match"]["finished"]
                 check_leaderboard = True
+                check_leaderboard_timestamp = int(time())
 
-    if check_leaderboard:
+    if check_leaderboard and (int(time()) - check_leaderboard_timestamp >= 300):
         print("Checking leaderboard!")
         broadcast = False
         check_leaderboard = False
+        check_leaderboard_timestamp = 0
 
         for user in user_list:
             player = get_player_stats(3, user.profile_id)
