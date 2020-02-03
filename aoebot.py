@@ -147,6 +147,11 @@ for user in user_list:
     user_names.append(user.name)
 
 while True:
+    # Check if we have a connection to the database or try to reconnect
+    if not db.is_connected():
+        cursor = db.cursor()
+        print("Reconnected to Database")
+
     print("Checking Games -", datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
     for user in user_list:
