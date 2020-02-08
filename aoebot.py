@@ -189,6 +189,7 @@ while True:
                     # CLI output
                     print(message)
                     if game["last_match"]["num_players"] == 2:
+                        # send message if announce solo games is true
                         if announce_solo_games:
                             send_message(broadcast_channel, message)
                     else:
