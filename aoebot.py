@@ -181,11 +181,12 @@ while True:
                 # Make sure its not a team game to avoid double posts
                 # We split the api response up to check the opponent side
                 # The opponent side is for all user the same
-                # The own team side is variable (the user wich we ask for is the first one)
+                # The own team side is variable (the user we ask for is the first one)
                 split = simple_match.split(" -VS- ")
                 # if split 1 is not in the matches variable - its the first time see this match
                 if split[1] not in str(matches):
                     message = "New Match: " + str(simple_match)
+                    # CLI output
                     print(message)
                     if game["last_match"]["num_players"] == 2:
                         if announce_solo_games:
