@@ -43,7 +43,6 @@ records = cursor.fetchone()
 tgbot_token = records[0]
 
 # Broadcast channel
-
 sqlquery = "SELECT config_value FROM configs WHERE config_name = 'broadcast_channel'"
 cursor.execute(sqlquery)
 records = cursor.fetchone()
@@ -70,6 +69,8 @@ class User:
 # ao2.net methods #
 ###################
 
+# API from https://aoe2.net/#api and https://aoe2.net/#nightbot
+
 # Get leaderboard from bot
 def get_leaderboard(leaderboard_id, start, count):
     try:
@@ -81,6 +82,7 @@ def get_leaderboard(leaderboard_id, start, count):
         print("Got no data from the API!")
         return False
 
+# Get a the stats from a player
 def get_player_stats(leaderboard_id, profile_id):
     try:
         api_url = "https://aoe2.net/api/leaderboard?game=aoe2de&leaderboard_id={}&profile_id={}".format(leaderboard_id, profile_id)
@@ -90,6 +92,7 @@ def get_player_stats(leaderboard_id, profile_id):
         print("Got no data from the API!")
         return False
 
+# Get the most recent full game info
 def get_last_match(profile_id):
     try:
         api_url = "https://aoe2.net/api/player/lastmatch?game=aoe2de&profile_id={}".format(profile_id)
@@ -99,6 +102,7 @@ def get_last_match(profile_id):
         print("Got no data from the API!")
         return False
 
+# Get a simple matchup string i.e: " Player 1 as CIV VS Player 2 as CIV on MAP"
 def get_match_simple(profile_id):
     try:
         api_url = "https://aoe2.net/api/nightbot/match?profile_id={}".format(profile_id)
@@ -112,7 +116,7 @@ def get_match_simple(profile_id):
 # Telegram methods #
 ####################
 
-# Get updates from bot
+# Get messages send to the telegram bot
 def get_messages(offset_func):
     try:
         offset_url = "https://api.telegram.org/bot" + str(tgbot_token) + "/getUpdates?offset=" + offset_func
@@ -141,10 +145,12 @@ sqlquery = "select * from users"
 cursor.execute(sqlquery)
 records = cursor.fetchall()
 
+# Create list of active users
 for player in records:
     user_object = User(player[1], player[2], player[3], player[4], player[6], player[7], player[8], player[9], player[10])
     user_list.append(user_object)
 
+# Set the user.name attribute for every user in the user_list
 for user in user_list:
     user_names.append(user.name)
 
@@ -154,19 +160,30 @@ while True:
         cursor = db.cursor()
         print("Reconnected to Database")
 
+    # ClI output to see some action
     print("Checking Games -", datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
+    # Check if user has an unfinished game
     for user in user_list:
-        # Check if user has an unfinished game
+        # Get all infos into the variable game to have access without triggering the api
         game = get_last_match(user.profile_id)
+        # Check if the game is still running
+        # Also check if this lobby is know so we do not post games multiple times to the chat
         if game and not game["last_match"]["finished"] and user.last_lobby != game["last_match"]["lobby_id"]:
+            # CLI output
             print("Unfinished game found for", user.name)
+            # Set lobby id to track it
             user.last_lobby = game["last_match"]["lobby_id"]
+            # Get the match string vom aoe2.net api
             simple_match = get_match_simple(user.profile_id)
             # Ignore if game vs AI
             if not simple_match == "AI games not supported":
                 # Make sure its not a team game to avoid double posts
+                # We split the api response up to check the opponent side
+                # The opponent side is for all user the same
+                # The own team side is variable (the user wich we ask for is the first one)
                 split = simple_match.split(" -VS- ")
+                # if split 1 is not in the matches variable - its the first time see this match
                 if split[1] not in str(matches):
                     message = "New Match: " + str(simple_match)
                     print(message)
