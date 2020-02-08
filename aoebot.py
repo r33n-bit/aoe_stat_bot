@@ -23,12 +23,14 @@ check_leaderboard_timestamp = 0
 config = configparser.RawConfigParser()
 config.read("./database.ini")
 dbhost = config.get("Database", "dbhost")
+dbport = config.get("Database", "dbport")
 database = config.get("Database", "database")
 dbuser = config.get("Database", "dbuser")
 dbpass = config.get("Database", "dbpass")
 
 # Get the Database running
 db = mysql.connector.connect(host=dbhost,
+                             port=dbport,
                              database=database,
                              user=dbuser,
                              password=dbpass)
